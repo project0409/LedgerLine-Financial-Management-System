@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${ledgerline.security.jwt.secret:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    @Value("${ledgerline.security.jwt.secret:}")
     private String jwtSecret;
 
     @Value("${ledgerline.security.jwt.expiration-ms:86400000}")
@@ -33,10 +33,21 @@ public class JwtTokenProvider {
     @Value("${ledgerline.security.jwt.cookie-name:ledgerline_jwt}")
     private String cookieName;
 
+    @Value("${ledgerline.security.jwt.cookie-secure:false}")
+    private boolean cookieSecure;
+
     private SecretKey key;
 
     @PostConstruct
     public void init() {
+        if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
+            throw new IllegalStateException("FATAL SECURITY CONFIGURATION: JWT_SECRET environment variable is missing. A strong 256-bit (32+ character) secret is strictly required.");
+        }
+
+        if (jwtSecret.trim().length() < 32) {
+            throw new IllegalStateException("FATAL SECURITY CONFIGURATION: JWT_SECRET is too short. It must be at least 32 characters (256 bits) to ensure cryptographic safety.");
+        }
+
         byte[] keyBytes;
         try {
             keyBytes = Decoders.BASE64.decode(jwtSecret);
