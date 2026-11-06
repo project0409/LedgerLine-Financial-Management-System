@@ -128,6 +128,15 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-javaagent:"C:\Users\srava\.m2\repository\net\bytebuddy\byte-buddy-agent\1.14.19\byte-buddy-agent-1.14.19.jar" -XX:+EnableDynamicAgentLoading -Djdk.attach.allowAttachSelf=true -Djdk.net.URLClassPath.disableClassPathURLCheck=true -Xshare:off</argLine>
+                    <useManifestOnlyJar>false</useManifestOnlyJar>
+                    <forkedProcessTimeoutInSeconds>120</forkedProcessTimeoutInSeconds>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>

@@ -21,5 +21,6 @@ ledgerline:
       secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
       expiration-ms: 3600000
       cookie-name: ledgerline_jwt
+    bcrypt-strength: 4
   cors:
     allowed-origins: http://localhost:5173

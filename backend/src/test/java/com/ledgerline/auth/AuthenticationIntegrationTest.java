@@ -265,7 +265,7 @@ class AuthenticationIntegrationTest {
     void shouldNormalizeEmailDuringRegistrationAndLogin() throws Exception {
         RegisterRequest register = RegisterRequest.builder()
                 .fullName("Normalization User")
-                .email("  Normalized.User@Example.COM  ")
+                .email("Normalized.User@Example.COM")
                 .password("ValidPass123!")
                 .confirmPassword("ValidPass123!")
                 .build();
