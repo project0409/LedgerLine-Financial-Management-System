@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { RegistrationAutoLoginError } from '../../context/AuthContext';
 import { Input } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
-import { UserPlus, Shield, AlertCircle } from 'lucide-react';
+import { UserPlus, Shield, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
@@ -17,11 +18,15 @@ export const RegisterPage: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return; // Prevent repeated submissions
+
     setErrorMessage(null);
+    setSuccessNotice(null);
     setValidationErrors({});
 
     if (password !== confirmPassword) {
@@ -45,10 +50,28 @@ export const RegisterPage: React.FC = () => {
       });
       navigate('/dashboard');
     } catch (err: any) {
-      if (err.response?.data?.validationErrors) {
-        setValidationErrors(err.response.data.validationErrors);
+      if (err instanceof RegistrationAutoLoginError || err.name === 'RegistrationAutoLoginError') {
+        setSuccessNotice('Registration succeeded! Your account is created, but automatic sign-in could not be completed. Please sign in below.');
+        return;
+      }
+
+      if (!err.response) {
+        setErrorMessage('Backend service is currently unavailable. Please verify the server is running at http://localhost:8080.');
+        return;
+      }
+
+      const status = err.response.status;
+      const data = err.response.data;
+
+      if (status === 409) {
+        setErrorMessage(data?.message || 'This email address is already registered. Please sign in.');
+      } else if (data?.validationErrors && Object.keys(data.validationErrors).length > 0) {
+        setValidationErrors(data.validationErrors);
+        setErrorMessage(data.message || 'Please correct the validation errors below.');
+      } else if (status === 500) {
+        setErrorMessage('An unexpected server error occurred. Please try again later.');
       } else {
-        setErrorMessage(err.response?.data?.message || 'Registration failed. Please check inputs.');
+        setErrorMessage(data?.message || 'Registration failed. Please check your information and try again.');
       }
     } finally {
       setIsLoading(false);
@@ -79,8 +102,29 @@ export const RegisterPage: React.FC = () => {
 
           <div className="mb-5 p-3 bg-emerald-50/60 border border-emerald-100 rounded-lg flex items-center space-x-2 text-xs text-emerald-800">
             <Shield className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-            <span>Public registration applies strict non-administrative privileges.</span>
+            <span>Public registration automatically assigns non-administrative ROLE_ACCOUNT_HOLDER.</span>
           </div>
+
+          {/* Success notice if registration succeeded but auto-login failed */}
+          {successNotice && (
+            <div className="mb-5 p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2">
+              <div className="flex items-start space-x-2.5">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="text-sm font-semibold text-emerald-900">Registration Successful!</h4>
+                  <p className="text-xs text-emerald-700 mt-0.5">{successNotice}</p>
+                </div>
+              </div>
+              <div className="pt-2 flex justify-end">
+                <Link to="/login">
+                  <Button size="sm" className="flex items-center space-x-1.5">
+                    <span>Proceed to Sign In</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
 
           {errorMessage && (
             <div className="mb-5 p-3.5 bg-rose-50 border border-rose-200 rounded-lg flex items-start space-x-2.5">
@@ -97,6 +141,7 @@ export const RegisterPage: React.FC = () => {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               error={validationErrors.fullName}
+              disabled={isLoading}
               required
             />
 
@@ -107,6 +152,7 @@ export const RegisterPage: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               error={validationErrors.email}
+              disabled={isLoading}
               required
             />
 
@@ -117,6 +163,7 @@ export const RegisterPage: React.FC = () => {
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
               error={validationErrors.phoneNumber}
+              disabled={isLoading}
             />
 
             <Input
@@ -126,6 +173,7 @@ export const RegisterPage: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               error={validationErrors.password}
+              disabled={isLoading}
               required
             />
 
@@ -136,10 +184,16 @@ export const RegisterPage: React.FC = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               error={validationErrors.confirmPassword}
+              disabled={isLoading}
               required
             />
 
-            <Button type="submit" className="w-full mt-3" isLoading={isLoading}>
+            <Button
+              type="submit"
+              className="w-full mt-3"
+              isLoading={isLoading}
+              disabled={isLoading}
+            >
               Complete Registration & Sign In
             </Button>
           </form>

@@ -68,7 +68,7 @@ public class AuthService {
                 .roles(roles)
                 .build();
 
-        User savedUser = userRepository.save(user);
+        User savedUser = userRepository.saveAndFlush(user);
 
         String ip = extractClientIp(httpRequest);
         auditLogService.log(savedUser, "USER_REGISTRATION", "USER", String.valueOf(savedUser.getId()), ip,

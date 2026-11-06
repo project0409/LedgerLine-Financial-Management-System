@@ -95,11 +95,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleUnauthorized(
             Exception ex, HttpServletRequest request) {
 
+        String message = (ex instanceof BadCredentialsException)
+                ? "Invalid email or password"
+                : (ex.getMessage() != null ? ex.getMessage() : "Invalid credentials");
+
         ErrorResponse response = ErrorResponse.builder()
                 .success(false)
                 .status(HttpStatus.UNAUTHORIZED.value())
                 .error("Unauthorized")
-                .message(ex.getMessage() != null ? ex.getMessage() : "Invalid credentials")
+                .message(message)
                 .path(request.getRequestURI())
                 .timestamp(LocalDateTime.now())
                 .build();

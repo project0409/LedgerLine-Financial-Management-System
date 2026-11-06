@@ -150,7 +150,7 @@ public class JwtTokenProvider {
                 .path("/")
                 .maxAge(jwtExpirationMs / 1000)
                 .httpOnly(true)
-                .secure(false) // Set to true in HTTPS production
+                .secure(cookieSecure)
                 .sameSite("Lax")
                 .build();
     }
@@ -160,7 +160,7 @@ public class JwtTokenProvider {
                 .path("/")
                 .maxAge(0)
                 .httpOnly(true)
-                .secure(false)
+                .secure(cookieSecure)
                 .sameSite("Lax")
                 .build();
     }

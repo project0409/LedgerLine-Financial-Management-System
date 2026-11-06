@@ -16,20 +16,38 @@ export const LoginPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return; // Prevent repeated submissions
+
     setErrorMessage(null);
 
-    if (!email.trim() || !password) {
-      setErrorMessage('Please provide both email and password');
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) {
+      setErrorMessage('Please provide both email and password.');
       return;
     }
 
     try {
       setIsLoading(true);
-      await login({ email: email.trim(), password });
+      await login({ email: cleanEmail, password });
       navigate('/dashboard');
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Invalid email or password. Please verify credentials.';
-      setErrorMessage(msg);
+      if (!err.response) {
+        setErrorMessage('Backend service is currently unavailable. Please verify the server is running at http://localhost:8080.');
+        return;
+      }
+
+      const status = err.response.status;
+      const data = err.response.data;
+
+      if (status === 401) {
+        setErrorMessage('Invalid email or password. Please verify your credentials.');
+      } else if (status === 403) {
+        setErrorMessage(data?.message || 'Access denied. Your account may be locked or disabled.');
+      } else if (status === 500) {
+        setErrorMessage('An unexpected server error occurred. Please try again later.');
+      } else {
+        setErrorMessage(data?.message || 'Authentication failed. Please verify credentials.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -78,6 +96,7 @@ export const LoginPage: React.FC = () => {
                 placeholder="you@domain.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
                 required
               />
             </div>
@@ -89,11 +108,17 @@ export const LoginPage: React.FC = () => {
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
                 required
               />
             </div>
 
-            <Button type="submit" className="w-full mt-2" isLoading={isLoading}>
+            <Button
+              type="submit"
+              className="w-full mt-2"
+              isLoading={isLoading}
+              disabled={isLoading}
+            >
               Authenticate & Access Platform
             </Button>
           </form>
@@ -108,6 +133,7 @@ export const LoginPage: React.FC = () => {
                 type="button"
                 onClick={() => fillCredentials('admin@ledgerline.com', 'Admin@12345')}
                 className="p-2 text-left rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40 transition"
+                disabled={isLoading}
               >
                 <span className="font-medium text-slate-800 block">Administrator</span>
                 <span className="text-[11px] text-slate-500">admin@ledgerline.com</span>
@@ -116,6 +142,7 @@ export const LoginPage: React.FC = () => {
                 type="button"
                 onClick={() => fillCredentials('auditor@ledgerline.com', 'Auditor@12345')}
                 className="p-2 text-left rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40 transition"
+                disabled={isLoading}
               >
                 <span className="font-medium text-slate-800 block">Auditor</span>
                 <span className="text-[11px] text-slate-500">auditor@ledgerline.com</span>

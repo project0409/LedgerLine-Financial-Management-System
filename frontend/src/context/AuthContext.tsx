@@ -2,6 +2,16 @@ import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { User, LoginPayload, RegisterPayload } from '../types';
 import { authService } from '../services/authService';
 
+export class RegistrationAutoLoginError extends Error {
+  public originalError: any;
+  constructor(originalError: any) {
+    super('Registration succeeded, but automatic login could not be completed. Please sign in manually.');
+    this.name = 'RegistrationAutoLoginError';
+    this.originalError = originalError;
+    Object.setPrototypeOf(this, RegistrationAutoLoginError.prototype);
+  }
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -41,9 +51,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (payload: RegisterPayload) => {
+    // 1. Attempt user registration
     await authService.register(payload);
-    // After registration, log in
-    await login({ email: payload.email, password: payload.password });
+
+    // 2. Attempt automatic login
+    try {
+      await login({ email: payload.email, password: payload.password });
+    } catch (loginError) {
+      throw new RegistrationAutoLoginError(loginError);
+    }
   };
 
   const logout = async () => {
